@@ -339,6 +339,7 @@ const TAG = {esp:'Tem espaço',pos:'A validar',tem:'Consta no escopo',bloq:'Evit
 const KEY = 'firma-menu-oportunidades-v2';
 const ICON = {
   spark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 17l.8 2.2L22 20l-2.2.8L19 23l-.8-2.2L16 20l2.2-.8z"/></svg>',
+  zero:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>',
   users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/></svg>',
   plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
@@ -348,7 +349,7 @@ const ICON = {
 
 let db = null, assets = null, downloads = null, me = null;
 let clients = [], studies = [], ready = false, denied = false, offline = false;
-let delAsk = null, view = 'menu', showTem = new Set(), sel = {}, open = new Set(), studyName = '', dropOpen = false, sbOpen = false, modal = null, editing = null, draft = {};
+let zeroAsk = false, zeroT = null, delAsk = null, view = 'menu', showTem = new Set(), sel = {}, open = new Set(), studyName = '', dropOpen = false, sbOpen = false, modal = null, editing = null, draft = {};
 try { const s = JSON.parse(localStorage.getItem(KEY)||'null'); if (s) { sel = s.sel||{}; open = new Set(s.open||[]); studyName = s.name||''; } } catch(_) {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify({sel, open:[...open], name:studyName})); } catch(_) {} };
 const cat = code => CAT.find(c => c.code === code);
@@ -380,6 +381,7 @@ function actHTML(){
     <div class="sa"><button type="button" data-study="${esc(s.id)}">Abrir</button><button type="button" data-spdf="${esc(s.id)}">Exportar PDF</button><button type="button" class="del ${delAsk===s.id?'ok':''}" data-sdel="${esc(s.id)}">${delAsk===s.id?'Confirmar exclusão':'Excluir'}</button></div></div>`).join('') : '<div class="none">Nenhum estudo salvo ainda. Monte o menu e use Salvar estudo.</div>';
   return `<button class="f-btn" type="button" id="b-clients" ${on?'':'disabled'}>${ICON.users}Gerenciar clientes</button>
     <button class="f-btn" type="button" id="b-hist" aria-expanded="${dropOpen}" ${on?'':'disabled'}>${ICON.clock}Últimos estudos</button>
+    <button class="f-btn" type="button" id="b-zero" ${on&&(t.n||studyName)?'':'disabled'} ${zeroAsk?'style="background:#a3231b;border-color:#a3231b;color:#fff"':''}>${ICON.zero}${zeroAsk?'Confirmar: zerar':'Zerar estudo'}</button>
     <button class="f-btn" type="button" id="b-save" ${on&&t.n?'':'disabled'}>${ICON.save}Salvar estudo</button>
     <button class="f-btn" type="button" id="b-sug" ${on?'':'disabled'}>${ICON.spark}Sugerir estudo</button>
     <button class="f-btn pri" type="button" id="b-pdf" ${on&&t.n?'':'disabled'}>${ICON.pdf}Exportar PDF</button>
@@ -682,7 +684,8 @@ document.addEventListener('click', e => {
   const vv = e.target.closest('[data-view],[data-goto]');
   if (vv) { if (vv.dataset.view) view = vv.dataset.view; else { view = 'menu'; open.add(vv.dataset.goto); save(); render(); const el = document.querySelector(`[data-open="${CSS.escape(vv.dataset.goto)}"]`); if (el) el.scrollIntoView({block:'start'}); return; } render(); window.scrollTo(0,0); return; }
   if (e.target.closest('[data-stop]') ) return;
-  const t = e.target.closest('#b-clients,#b-sug,#b-cat,#b-item,[data-all],[data-none],[data-showtem],[data-open],[data-tg],[data-esp],[data-edit],[data-study],#b-new,#b-hist,#b-save,#b-pdf,#s-new,#mb'); if (!t) return;
+  if (!e.target.closest('#b-zero') && zeroAsk) { zeroAsk = false; clearTimeout(zeroT); }
+  const t = e.target.closest('#b-zero,#b-clients,#b-sug,#b-cat,#b-item,[data-all],[data-none],[data-showtem],[data-open],[data-tg],[data-esp],[data-edit],[data-study],#b-new,#b-hist,#b-save,#b-pdf,#s-new,#mb'); if (!t) return;
   const d = t.dataset;
   if (d.all || d.none) { const [id, g] = (d.all || d.none).split('|'), c = cli(id);
     CAT.filter(k => grp(k) === g && !['tem','bloq'].includes(itemOf(c,k.code).s)).forEach(k => { const key = id+'|'+k.code; if (d.all && !sel[key]) toggle(key); if (d.none && sel[key]) delete sel[key]; });
@@ -694,6 +697,8 @@ document.addEventListener('click', e => {
   else if (d.edit) modal = {type:'client', id:d.edit};
   else if (d.study) { const s = studies.find(x => x.id === d.study); if (s) { sel = JSON.parse(JSON.stringify(s.sel||{})); studyName = s.name; Object.keys(sel).forEach(k => open.add(k.split('|')[0])); dropOpen = false; toast('Estudo carregado: ' + s.name); } }
   else if (t.id === 'b-new') modal = {type:'client'};
+  else if (t.id === 'b-zero') { if (!zeroAsk) { zeroAsk = true; clearTimeout(zeroT); zeroT = setTimeout(() => { zeroAsk = false; render(); }, 4000); }
+    else { zeroAsk = false; clearTimeout(zeroT); sel = {}; studyName = ''; open = new Set(); dropOpen = false; toast('Estudo zerado'); } }
   else if (t.id === 'b-clients') { modal = {type:'clients'}; dropOpen = false; }
   else if (t.id === 'b-item') modal = {type:'item'};
   else if (t.id === 'b-cat') modal = {type:'catalog'};
