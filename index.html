@@ -254,6 +254,7 @@ button.c{border:0;padding:0;cursor:help}
 }
 @media (max-width:560px){.row2{grid-template-columns:1fr}.f-sys-s{display:none}.f-sys-t{font-size:19px}.f-mark{height:40px}.lg{width:56px;height:36px}.lg img{max-width:56px;max-height:32px}.lg span{width:36px;height:36px;font-size:13px}.ph .nm{font-size:16px}.side .big{font-size:24px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:560px){.cmr{flex-wrap:wrap}.cma{width:100%;justify-content:flex-end}}
 .auth{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px 16px;overflow:auto}
 .auth[hidden]{display:none!important}
 .auth-box{width:100%;max-width:380px}
@@ -338,6 +339,7 @@ const TAG = {esp:'Tem espaço',pos:'A validar',tem:'Consta no escopo',bloq:'Evit
 const KEY = 'firma-menu-oportunidades-v2';
 const ICON = {
   spark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 17l.8 2.2L22 20l-2.2.8L19 23l-.8-2.2L16 20l2.2-.8z"/></svg>',
+  users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/></svg>',
   plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
   save:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l5 5v13H3V3z"/><path d="M7 3v6h8"/><path d="M7 21v-7h10v7"/></svg>',
@@ -376,7 +378,7 @@ function actHTML(){
   const t = totals(), on = ready && !denied;
   const list = studies.length ? studies.map(s => `<div class="sr"><button class="di" type="button" data-study="${esc(s.id)}"><span><b>${esc(s.name)}</b><small>${new Date(s.createdAt).toLocaleDateString('pt-BR')} · ${s.n||0} itens</small></span><span class="v">${BRL(s.m)}/mês</span></button>
     <div class="sa"><button type="button" data-study="${esc(s.id)}">Abrir</button><button type="button" data-spdf="${esc(s.id)}">Exportar PDF</button><button type="button" class="del ${delAsk===s.id?'ok':''}" data-sdel="${esc(s.id)}">${delAsk===s.id?'Confirmar exclusão':'Excluir'}</button></div></div>`).join('') : '<div class="none">Nenhum estudo salvo ainda. Monte o menu e use Salvar estudo.</div>';
-  return `<button class="f-btn" type="button" id="b-new" ${on?'':'disabled'}>${ICON.plus}Novo cliente</button>
+  return `<button class="f-btn" type="button" id="b-clients" ${on?'':'disabled'}>${ICON.users}Gerenciar clientes</button>
     <button class="f-btn" type="button" id="b-hist" aria-expanded="${dropOpen}" ${on?'':'disabled'}>${ICON.clock}Últimos estudos</button>
     <button class="f-btn" type="button" id="b-save" ${on&&t.n?'':'disabled'}>${ICON.save}Salvar estudo</button>
     <button class="f-btn" type="button" id="b-sug" ${on?'':'disabled'}>${ICON.spark}Sugerir estudo</button>
@@ -544,10 +546,18 @@ function renderModal(){
       <label class="fl" for="c-fee">Fee mensal (R$)<input id="c-fee" type="number" min="0" step="any" value="${c?c.fee:''}"></label></div>
       <label class="fl" for="c-scope">Escopo atual, em uma linha<textarea id="c-scope">${esc(c?(c.semMenu?'':c.scope):'')}</textarea></label>
       <div class="fl">Itens do cardápio que já estão no escopo<div class="cks">${CAT.map(k => `<label><input type="checkbox" name="tem" value="${k.code}" ${tem.has(k.code)?'checked':''}>${esc(k.name)}</label>`).join('')}</div></div>
-      ${assets ? `<label class="fl" for="c-logo">Logo do cliente (PNG ou SVG, opcional)<input id="c-logo" type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp"></label>` : ''}
+      ${assets ? `<div class="fl">Logo do cliente (PNG, SVG, JPG ou WEBP)${c && c.logo ? `<div style="display:flex;align-items:center;gap:12px;margin:8px 0 6px">${logoHTML(c)}<label style="display:flex;align-items:center;gap:6px;font-weight:400;font-size:13px"><input type="checkbox" id="c-logo-rm">Remover logo atual</label></div>` : ''}<input id="c-logo" type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp" aria-label="${c && c.logo ? 'Trocar logo' : 'Enviar logo'}"></div>` : ''}
       <div class="err" id="c-err"></div>
-      <div class="acts"><button class="f-btn" type="button" data-close="1">Cancelar</button><button class="f-btn pri" type="submit">Salvar cliente</button></div></form></div>`;
+      <div class="acts">${c ? `<button class="f-btn" type="button" data-cdel="${esc(c.id)}" style="color:#a3231b;margin-right:auto">Excluir cliente</button>` : ''}<button class="f-btn" type="button" ${modal.back ? 'data-cback="1"' : 'data-close="1"'}>${modal.back ? 'Voltar' : 'Cancelar'}</button><button class="f-btn pri" type="submit">Salvar cliente</button></div></form></div>`;
     setTimeout(() => { const i = document.getElementById('c-name'); i && i.focus(); }, 0);
+  } else if (modal.type === 'clients') {
+    const L = clients.slice().sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    el.innerHTML = `<div class="ov" data-close="1"><div class="md" role="dialog" aria-modal="true" aria-labelledby="mt" style="width:min(720px,100%)">
+      <h3 id="mt">Gerenciar clientes</h3><p class="sub">${L.length} clientes cadastrados. Edite nome, logo, fee e escopo, ou exclua quem saiu da carteira.</p>
+      <div style="display:flex;flex-direction:column;gap:6px">${L.map(c => `<div class="cmr" style="display:flex;align-items:center;gap:12px;border:1px solid var(--hair);border-radius:14px;padding:10px 12px">
+        ${logoHTML(c)}<div style="min-width:0;flex:1"><b style="font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.name)}</b><div style="font-size:12px;color:var(--muted)">${c.fee ? BRL(c.fee) + '/mês' : 'Fee a preencher'}${c.semMenu ? ' · sem escopo mapeado' : ''}</div></div>
+        <span class="cma" style="display:flex;gap:6px;flex:none"><button class="f-btn" type="button" data-cedit="${esc(c.id)}">Editar</button><button class="f-btn" type="button" data-cdel="${esc(c.id)}">Excluir</button></span></div>`).join('') || '<div class="notice">Nenhum cliente cadastrado.</div>'}</div>
+      <div class="acts"><button class="f-btn" type="button" data-cnew="1">${ICON.plus}Novo cliente</button><button class="f-btn pri" type="button" data-close="1">Fechar</button></div></div></div>`;
   } else if (modal.type === 'suggest') {
     const L = suggestions(); window.__sug = L;
     el.innerHTML = `<div class="ov" data-close="1"><div class="md" role="dialog" aria-modal="true" aria-labelledby="mt" style="width:min(760px,100%)">
@@ -595,12 +605,13 @@ async function submitClient(form){
   const items = {};
   CAT.forEach(k => { const p = prev && prev.items && prev.items[k.code]; items[k.code] = tem.includes(k.code) ? {s:'tem', note:'', desc:0, mes:2} : (p && p.s !== 'tem' ? p : {s:'pos', note:'', desc:0, mes:2}); });
   let logo = prev ? (prev.logo||null) : null;
+  const rm = document.getElementById('c-logo-rm'); if (rm && rm.checked) logo = null;
   const f = document.getElementById('c-logo');
   try {
     if (f && f.files && f.files[0]) { const r = await assets.upload(f.files[0]); logo = r.id; }
     await db.collection('clients').doc(id).set({name, fee, scope: scope || 'Escopo ainda não descrito.', items, order: prev ? (prev.semMenu ? Date.now() : prev.order) : Date.now(), semMenu: false, logo, updatedAt: Date.now()});
     tem.forEach(code => { delete sel[id+'|'+code]; });
-    modal = null; open.add(id); save(); render(); toast(prev ? 'Cadastro atualizado' : 'Cliente cadastrado');
+    const back = modal.back; modal = back ? {type:'clients'} : null; open.add(id); save(); render(); toast(prev ? 'Cadastro atualizado' : 'Cliente cadastrado');
   } catch(e) { err.textContent = 'Não foi possível salvar: ' + (e && (e.message||e.code) || 'erro desconhecido') + '.'; }
 }
 async function submitItem(form){
@@ -638,6 +649,15 @@ document.addEventListener('click', e => {
   if (e.target.closest('.ctl')) return;
   if (modal) { const sg = e.target.closest('[data-sug]');
     if (sg) { const x = (window.__sug||[])[+sg.dataset.sug]; if (x) { sel = JSON.parse(JSON.stringify(x.sel)); studyName = 'Sugestão: ' + x.name; Object.keys(sel).forEach(k => open.add(k.split('|')[0])); view = 'menu'; modal = null; save(); render(); toast('Sugestão aplicada: ' + x.name); } return; }
+    const cb = e.target.closest('[data-cedit],[data-cnew],[data-cdel],[data-cback]');
+    if (cb) { const d = cb.dataset;
+      if (d.cedit) { modal = {type:'client', id:d.cedit, back:true}; render(); }
+      else if (d.cnew) { modal = {type:'client', back:true}; render(); }
+      else if (d.cback) { modal = {type:'clients'}; render(); }
+      else if (d.cdel) { if (cb.dataset.ok !== '1') { document.querySelectorAll('[data-cdel][data-ok="1"]').forEach(b => { b.dataset.ok = ''; b.textContent = b.dataset.lbl || 'Excluir'; b.style.background = ''; b.style.color = ''; }); cb.dataset.lbl = cb.textContent; cb.dataset.ok = '1'; cb.textContent = 'Confirmar exclusão'; cb.style.background = '#a3231b'; cb.style.color = '#fff'; return; }
+        const id = d.cdel, nm = (cli(id)||{}).name || 'Cliente'; cb.disabled = true;
+        db.collection('clients').doc(id).delete().then(() => { Object.keys(sel).forEach(k => { if (k.split('|')[0] === id) delete sel[k]; }); open.delete(id); save(); modal = {type:'clients'}; render(); toast(nm + ' excluído'); }, er => { cb.disabled = false; toast('Não foi possível excluir: ' + (er && (er.message||er.code) || 'erro')); }); }
+      return; }
     const mb = e.target.closest('[data-iedit],[data-inew],[data-idel]');
     if (mb) { const d = mb.dataset;
       if (d.iedit) { modal = {type:'item', id:d.iedit}; render(); }
@@ -662,7 +682,7 @@ document.addEventListener('click', e => {
   const vv = e.target.closest('[data-view],[data-goto]');
   if (vv) { if (vv.dataset.view) view = vv.dataset.view; else { view = 'menu'; open.add(vv.dataset.goto); save(); render(); const el = document.querySelector(`[data-open="${CSS.escape(vv.dataset.goto)}"]`); if (el) el.scrollIntoView({block:'start'}); return; } render(); window.scrollTo(0,0); return; }
   if (e.target.closest('[data-stop]') ) return;
-  const t = e.target.closest('#b-sug,#b-cat,#b-item,[data-all],[data-none],[data-showtem],[data-open],[data-tg],[data-esp],[data-edit],[data-study],#b-new,#b-hist,#b-save,#b-pdf,#s-new,#mb'); if (!t) return;
+  const t = e.target.closest('#b-clients,#b-sug,#b-cat,#b-item,[data-all],[data-none],[data-showtem],[data-open],[data-tg],[data-esp],[data-edit],[data-study],#b-new,#b-hist,#b-save,#b-pdf,#s-new,#mb'); if (!t) return;
   const d = t.dataset;
   if (d.all || d.none) { const [id, g] = (d.all || d.none).split('|'), c = cli(id);
     CAT.filter(k => grp(k) === g && !['tem','bloq'].includes(itemOf(c,k.code).s)).forEach(k => { const key = id+'|'+k.code; if (d.all && !sel[key]) toggle(key); if (d.none && sel[key]) delete sel[key]; });
@@ -674,6 +694,7 @@ document.addEventListener('click', e => {
   else if (d.edit) modal = {type:'client', id:d.edit};
   else if (d.study) { const s = studies.find(x => x.id === d.study); if (s) { sel = JSON.parse(JSON.stringify(s.sel||{})); studyName = s.name; Object.keys(sel).forEach(k => open.add(k.split('|')[0])); dropOpen = false; toast('Estudo carregado: ' + s.name); } }
   else if (t.id === 'b-new') modal = {type:'client'};
+  else if (t.id === 'b-clients') { modal = {type:'clients'}; dropOpen = false; }
   else if (t.id === 'b-item') modal = {type:'item'};
   else if (t.id === 'b-cat') modal = {type:'catalog'};
   else if (t.id === 'b-hist') dropOpen = !dropOpen;
