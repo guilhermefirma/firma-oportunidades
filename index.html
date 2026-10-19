@@ -316,7 +316,8 @@ button.c{border:0;padding:0;cursor:help}
     <label id="a-l-pass2" hidden>Confirme a senha<input id="a-pass2" type="password" autocomplete="new-password"></label>
     <button class="f-btn go" type="submit" id="a-go">Entrar</button>
   </form>
-  <button class="lnk" type="button" id="a-alt">Esqueci minha senha</button>
+  <button class="lnk" type="button" id="a-alt">Esqueci minha senha</button><br>
+  <button class="lnk" type="button" id="a-first">Primeiro acesso? Criar minha senha</button>
   <div class="auth-msg" id="a-msg" role="status"></div>
   <div class="auth-foot">Uso interno da FIRMA. Dados financeiros confidenciais.</div>
 </div></div>
@@ -837,14 +838,17 @@ function setMode(m, msg, cls){
   aMode = m; AU('auth').hidden = false;
   const L = {login: ['Menu de oportunidades', 'Acesso restrito. Entre com seu e-mail da FIRMA e sua senha.', 'Entrar', 'Esqueci minha senha'],
              forgot: ['Recuperar senha', 'Informe seu e-mail. Se ele tiver acesso, chega um link para criar uma nova senha.', 'Enviar link', 'Voltar para o login'],
-             setpass: ['Defina sua senha', 'Crie a senha de acesso ao sistema. Use no mínimo 10 caracteres.', 'Salvar senha e entrar', '']}[m];
+             setpass: ['Defina sua senha', 'Crie a senha de acesso ao sistema. Use no mínimo 10 caracteres.', 'Salvar senha e entrar', ''],
+             signup: ['Primeiro acesso', 'Use seu e-mail da FIRMA e crie uma senha com no mínimo 10 caracteres. Depois confirme pelo link que chega no seu e-mail.', 'Criar acesso', 'Voltar para o login']}[m];
   AU('a-t').textContent = L[0]; AU('a-s').textContent = L[1]; AU('a-go').textContent = L[2];
   AU('a-alt').textContent = L[3]; AU('a-alt').hidden = !L[3];
-  AU('a-l-email').hidden = m === 'setpass'; AU('a-l-pass').hidden = m === 'forgot'; AU('a-l-pass2').hidden = m !== 'setpass';
-  AU('a-pass').setAttribute('autocomplete', m === 'setpass' ? 'new-password' : 'current-password');
+  AU('a-l-email').hidden = m === 'setpass'; AU('a-l-pass').hidden = m === 'forgot'; AU('a-l-pass2').hidden = !(m === 'setpass' || m === 'signup');
+  AU('a-first').hidden = m !== 'login';
+  AU('a-pass').setAttribute('autocomplete', (m === 'setpass' || m === 'signup') ? 'new-password' : 'current-password');
   AU('a-msg').textContent = msg || ''; AU('a-msg').className = 'auth-msg ' + (cls || '');
 }
 AU('a-alt').addEventListener('click', () => setMode(aMode === 'login' ? 'forgot' : 'login'));
+AU('a-first').addEventListener('click', () => setMode('signup'));
 AU('a-form').addEventListener('submit', async e => {
   e.preventDefault(); const go = AU('a-go'), em = AU('a-email').value.trim().toLowerCase(), pw = AU('a-pass').value;
   const msg = (x, c) => { AU('a-msg').textContent = x; AU('a-msg').className = 'auth-msg ' + (c||''); };
@@ -860,6 +864,16 @@ AU('a-form').addEventListener('submit', async e => {
       if (!em) { msg('Informe o e-mail.', 'err'); return; }
       await sb.auth.resetPasswordForEmail(em, {redirectTo: location.origin + location.pathname});
       msg('Se o e-mail tiver acesso, o link chega em alguns minutos. Confira também o spam.', 'ok');
+    } else if (aMode === 'signup') {
+      const p2 = AU('a-pass2').value;
+      if (!ALLOWED.includes(em)) { msg('Este e-mail não tem acesso ao sistema.', 'err'); return; }
+      if (pw.length < 10) { msg('A senha precisa ter no mínimo 10 caracteres.', 'err'); return; }
+      if (pw !== p2) { msg('As senhas não conferem.', 'err'); return; }
+      const {data, error} = await sb.auth.signUp({email: em, password: pw, options: {emailRedirectTo: location.origin + location.pathname}});
+      if (error) { msg('Não foi possível criar o acesso: ' + error.message, 'err'); return; }
+      AU('a-pass').value = AU('a-pass2').value = '';
+      if (data.session) { startApp(data.session); return; }
+      setMode('login', 'Pronto. Abra o e-mail de confirmação e clique no link. Se a página do link der erro, ignore: a confirmação já valeu. Depois volte aqui e entre com e-mail e senha.', 'ok');
     } else {
       const p2 = AU('a-pass2').value;
       if (pw.length < 10) { msg('A senha precisa ter no mínimo 10 caracteres.', 'err'); return; }
