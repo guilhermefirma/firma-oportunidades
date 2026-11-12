@@ -15,12 +15,12 @@
   --card:#0a0a0a; --oncard:#ffffff; --oncard-mute:#a6a6a6;
   --ok:#17663f; --okbg:#e2f2e9; --warn:#8a5a00; --warnbg:#fbeccd;
   --display:'Funnel Display','Inter',system-ui,sans-serif; --text:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
-  --w:1240px; --radius:28px;
+  --w:1560px; --radius:28px;
 }
 *{box-sizing:border-box}
 html,body{background:var(--bg);color:var(--ink)}
 body{font-family:var(--text);font-size:14px;line-height:1.45;margin:0;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+  padding-left:max(clamp(20px,4vw,72px),env(safe-area-inset-left,0px));padding-right:max(clamp(20px,4vw,72px),env(safe-area-inset-right,0px));padding-block:0}
 .in{max-width:var(--w);margin:0 auto}
 button{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--ink);outline-offset:2px}
@@ -57,7 +57,7 @@ button{font:inherit;color:inherit}
 .drop .none{color:var(--muted);padding:12px;font-size:13px}
 
 /* Estrutura */
-.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) clamp(340px,24vw,400px);gap:clamp(20px,2vw,32px);align-items:start}
 .bar{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .bar h2{font-family:var(--display);font-weight:500;font-size:20px;letter-spacing:-.02em;margin:0}
 .bar .st{color:var(--muted);font-size:13px}
@@ -83,7 +83,7 @@ button{font:inherit;color:inherit}
 .gh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px}
 .gt{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .link{background:none;border:0;color:var(--ink);text-decoration:underline;text-underline-offset:2px;cursor:pointer;font-size:12px;font-weight:500;padding:0;white-space:nowrap}
-.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
 .it{background:var(--bg);border:1px solid var(--hair);border-radius:16px;padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:6px;min-width:0;position:relative}
 .it:hover{border-color:var(--ink-2)}
 .it.sel{border:1.5px solid var(--ink);padding:11.5px 13.5px;box-shadow:0 0 0 3px var(--surface)}
@@ -219,11 +219,11 @@ button.c{border:0;padding:0;cursor:help}
 .cks label{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink);background:var(--surface);border-radius:10px;padding:8px 10px;cursor:pointer}
 .md .acts{justify-content:flex-end}
 .md .err{color:#a3231b;font-size:13px}
-.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:13px;z-index:80;max-width:calc(100vw - 32px)}
+.toast{position:fixed;left:50%;bottom:calc(var(--sheet,0px) + 24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:13px;z-index:80;max-width:calc(100vw - 32px)}
 
 .more{display:flex;flex-direction:column;gap:16px}
 .desk{display:flex;flex-direction:column;gap:10px}
-@media (max-width:960px){
+@media (max-width:1100px){
   .layout{grid-template-columns:1fr}
   .side{position:fixed;top:auto;left:0;right:0;bottom:0;box-shadow:0 -12px 30px rgba(0,0,0,.18);border-radius:24px 24px 0 0;padding:14px max(16px,env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));z-index:30;gap:12px;max-height:78vh;overflow:auto}
   .side .more,.side .desk{display:none}
@@ -252,6 +252,8 @@ button.c{border:0;padding:0;cursor:help}
   .f-foot-top{gap:28px}.f-cols{gap:24px}.f-col{min-width:130px}
   .md{padding:20px}
 }
+@media (min-width:721px) and (max-width:1100px){.side{left:50%;right:auto;transform:translateX(-50%);width:min(760px,calc(100% - 48px))}}
+@media (max-width:1700px){.f-switch{order:2}.f-act{order:3;flex-basis:100%}}
 @media (max-width:560px){.row2{grid-template-columns:1fr}.f-sys-s{display:none}.f-sys-t{font-size:19px}.f-mark{height:40px}.lg{width:56px;height:36px}.lg img{max-width:56px;max-height:32px}.lg span{width:36px;height:36px;font-size:13px}.ph .nm{font-size:16px}.side .big{font-size:24px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 @media (max-width:560px){.cmr{flex-wrap:wrap}.cma{width:100%;justify-content:flex-end}}
@@ -539,8 +541,8 @@ function render(){
   }
   const sd = document.getElementById('side'); sd.className = 'side' + (sbOpen ? ' open' : ''); sd.innerHTML = denied ? '<div class="eb">Incremento mensal</div><div class="empty">Indisponível.</div>' : sideHTML();
   renderModal();
-  const mob = window.matchMedia('(max-width:960px)').matches;
-  document.body.style.paddingBottom = mob ? (sd.offsetHeight + 24) + 'px' : '';
+  const mob = window.matchMedia('(max-width:1100px)').matches;
+  document.body.style.paddingBottom = mob ? (sd.offsetHeight + 24) + 'px' : ''; document.documentElement.style.setProperty('--sheet', mob ? sd.offsetHeight + 'px' : '0px');
 }
 
 /* ---------- modais ---------- */
@@ -836,7 +838,7 @@ document.addEventListener('mouseover', e => { const el = e.target.closest('[data
 document.addEventListener('focusin', e => { const el = e.target.closest('[data-tip]'); if (el) showTip(el); });
 document.addEventListener('scroll', () => { document.getElementById('tip').hidden = true; }, true);
 /* ---------- boot ---------- */
-window.addEventListener('resize', () => { const sd = document.getElementById('side'); document.body.style.paddingBottom = window.matchMedia('(max-width:960px)').matches ? (sd.offsetHeight + 24) + 'px' : ''; });
+window.addEventListener('resize', () => { const sd = document.getElementById('side'); const mob = window.matchMedia('(max-width:1100px)').matches; document.body.style.paddingBottom = mob ? (sd.offsetHeight + 24) + 'px' : ''; document.documentElement.style.setProperty('--sheet', mob ? sd.offsetHeight + 'px' : '0px'); });
 render();
 const SB_URL = 'https://cahgrygzwfufukijwjks.supabase.co', SB_KEY = 'sb_publishable_BvUbGFJpR1j2jz05-B54qA_P2OO0WJo';
 var sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY, {auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit'}}) : null;
